@@ -1,587 +1,681 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!DOCTYPE html>
+  <html lang="zh-CN">
+
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>天穹卫星钟差预测系统1</title>
-        <style>
-          :root {
-            --primary: #7dd3fc;
-            --secondary: #0ea5e9;
-            --dark: #0f172a;
-            --light: #e2e8f0;
-          }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>天穹卫星钟差预测系统1</title>
+    <style>
+      /* 右侧科普悬浮按钮样式 */
+      .help-fab {
+        position: fixed;
+        right: 20px;
+        bottom: 50%;
+        transform: translateY(50%);
+        width: 56px;
+        height: 56px;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        border-radius: 50%;
+        backdrop-filter: blur(12px);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+      }
 
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Inter", sans-serif;
-          }
+      .help-fab:hover {
+        background: rgba(30, 41, 59, 1);
+        transform: translateY(50%) scale(1.1);
+        box-shadow: 0 12px 30px rgba(125, 211, 252, 0.2);
+      }
 
-          body {
-            background: linear-gradient(
-                rgba(15, 23, 42, 0.9),
-                rgba(15, 23, 42, 0.9)
-              ),
-              url("https://img2.jiemian.com/101/original/20200518/158979750975021100.png");
-            background-size: cover;
-            background-position: center 30%;
-            background-attachment: fixed;
-            color: var(--light);
-            min-height: 100vh;
-          }
+      .help-fab:hover .fab-tooltip {
+        opacity: 1;
+        right: 70px;
+      }
 
-          .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 4rem 2rem;
-          }
+      .help-fab svg {
+        width: 24px;
+        height: 24px;
+        stroke: var(--primary);
+      }
 
-          .header {
-            text-align: center;
-            padding: 4rem 0;
-            margin-bottom: 3rem;
-            background: url("https://images.unsplash.com/photo-1464802686167-b939a6910659?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80")
-              center/cover;
-            border-radius: 16px;
-            position: relative;
-            overflow: hidden;
-          }
+      /* 悬浮提示 */
+      .fab-tooltip {
+        position: absolute;
+        right: -100px;
+        white-space: nowrap;
+        background: rgba(30, 41, 59, 0.95);
+        color: var(--primary);
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 14px;
+        opacity: 0;
+        transition: all 0.3s;
+        pointer-events: none;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
 
-          .header::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(
-              45deg,
-              rgba(15, 23, 42, 0.9),
-              rgba(125, 211, 252, 0.2)
-            );
-          }
+      /* 文件已上传悬浮提示样式 */
+      .upload-toast {
+        position: fixed;
+        top: 30px;
+        /* 修改为顶部定位 */
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(30, 41, 59, 0.95);
+        color: var(--primary);
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(12px);
+        display: none;
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.5s ease-out;
+        /* 修改动画名称 */
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 1000;
+        /* 确保在最上层 */
+      }
 
-          .header h1 {
-            font-size: 3rem;
-            color: var(--primary);
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            position: relative;
-            margin-bottom: 1.5rem;
-          }
+      .upload-toast.active {
+        display: flex;
+        opacity: 1;
+      }
 
-          .main-content {
-            display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: 3rem;
-            margin-top: 3rem;
-          }
+      .upload-toast::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: var(--primary);
+        border-radius: 50%;
+        box-shadow: 0 0 12px var(--primary);
+      }
 
-          .control-card {
-            background: rgba(30, 41, 59, 0.85);
-            border-radius: 16px;
-            padding: 2rem;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(125, 211, 252, 0.15);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-            height: fit-content;
-          }
+      @keyframes slideDown {
+        from {
+          transform: translate(-50%, -100%);
+          opacity: 0;
+        }
 
-          /* 新增信息卡片样式 */
-          .info-card {
-            background: rgba(30, 41, 59, 0.85);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(125, 211, 252, 0.15);
-          }
+        to {
+          transform: translate(-50%, 0);
+          opacity: 1;
+        }
+      }
 
-          .info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.8rem;
-            padding: 0.6rem 1rem;
-            background: rgba(51, 65, 85, 0.3);
-            border-radius: 8px;
-          }
+      :root {
+        --primary: #7dd3fc;
+        --secondary: #0ea5e9;
+        --dark: #0f172a;
+        --light: #e2e8f0;
+      }
 
-          .info-label {
-            color: var(--primary);
-            font-weight: 500;
-            min-width: 100px;
-          }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+      }
 
-          .info-value {
-            color: var(--light);
-            text-align: right;
-            max-width: 200px;
-            overflow-wrap: break-word;
-          }
+      body {
+        background: linear-gradient(rgba(15, 23, 42, 0.9),
+            rgba(15, 23, 42, 0.9)),
+          url("https://img2.jiemian.com/101/original/20200518/158979750975021100.png");
+        background-size: cover;
+        background-position: center 30%;
+        background-attachment: fixed;
+        color: var(--light);
+        min-height: 100vh;
+      }
 
-          .satellite-list {
-            columns: 2;
-            column-gap: 1.5rem;
-          }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 4rem 2rem;
+      }
 
-          .satellite-item {
-            padding: 0.3rem 0;
-            font-size: 0.9em;
-            color: #94a3b8;
-          }
+      .header {
+        text-align: center;
+        padding: 4rem 0;
+        margin-bottom: 3rem;
+        background: url("https://images.unsplash.com/photo-1464802686167-b939a6910659?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80") center/cover;
+        border-radius: 16px;
+        position: relative;
+        overflow: hidden;
+      }
 
-          .input-group {
-            margin-bottom: 2rem;
-            position: relative;
-          }
+      .header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg,
+            rgba(15, 23, 42, 0.9),
+            rgba(125, 211, 252, 0.2));
+      }
 
-          label {
-            display: block;
-            margin-bottom: 0.8rem;
-            color: var(--primary);
-            font-weight: 600;
-            padding-left: 10px;
-            border-left: 3px solid;
-            border-image: linear-gradient(
-                to bottom,
-                var(--primary),
-                var(--secondary)
-              )
-              1;
-          }
+      .header h1 {
+        font-size: 3rem;
+        color: var(--primary);
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        position: relative;
+        margin-bottom: 1.5rem;
+      }
 
-          input,
-          select {
-            width: 100%;
-            padding: 1.2rem;
-            background: rgba(51, 65, 85, 0.7);
-            border: 1px solid rgba(71, 85, 105, 0.4);
-            color: var(--light);
-            border-radius: 10px;
-            transition: all 0.3s;
-            font-size: 16px;
-          }
+      .main-content {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 3rem;
+        margin-top: 3rem;
+      }
 
-          input:focus,
-          select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.2);
-          }
+      .control-card {
+        background: rgba(30, 41, 59, 0.85);
+        border-radius: 16px;
+        padding: 2rem;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(125, 211, 252, 0.15);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        height: fit-content;
+      }
 
-          .predict-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            width: 100%;
-            padding: 1.4rem;
-            background: linear-gradient(
-              135deg,
-              var(--primary) 0%,
-              var(--secondary) 100%
-            );
-            color: var(--dark);
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: all 0.3s;
-            margin-top: 1rem;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-          }
+      /* 信息卡片样式 */
+      .info-card {
+        background: rgba(30, 41, 59, 0.85);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(125, 211, 252, 0.15);
+      }
 
-          .predict-btn::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-              45deg,
-              transparent,
-              rgba(255, 255, 255, 0.2),
-              transparent
-            );
-            transform: rotate(45deg);
-            transition: all 0.5s;
-          }
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+        padding: 0.6rem 1rem;
+        background: rgba(51, 65, 85, 0.3);
+        border-radius: 8px;
+      }
 
-          .predict-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(125, 211, 252, 0.3);
-          }
+      .info-label {
+        color: var(--primary);
+        font-weight: 500;
+        min-width: 100px;
+      }
 
-          .predict-btn:hover::before {
-            animation: btnGlow 1.5s;
-          }
+      .info-value {
+        color: var(--light);
+        text-align: right;
+        max-width: 200px;
+        overflow-wrap: break-word;
+      }
 
-          .visualization-panel {
-            background: rgba(30, 41, 59, 0.85);
-            border-radius: 16px;
-            padding: 2rem;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(125, 211, 252, 0.15);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-            position: relative;
-          }
+      .satellite-list {
+        columns: 2;
+        column-gap: 1.5rem;
+      }
 
-          .chart-container {
-            height: 500px;
-            margin-bottom: 2rem;
-          }
+      .satellite-item {
+        padding: 0.3rem 0;
+        font-size: 0.9em;
+        color: #94a3b8;
+      }
 
-          .file-upload-wrapper {
-            position: relative;
-            margin-bottom: 1.5rem;
-          }
+      .input-group {
+        margin-bottom: 2rem;
+        position: relative;
+      }
 
-          .file-upload-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-          }
+      label {
+        display: block;
+        margin-bottom: 0.8rem;
+        color: var(--primary);
+        font-weight: 600;
+        padding-left: 10px;
+        border-left: 3px solid;
+        border-image: linear-gradient(to bottom,
+            var(--primary),
+            var(--secondary)) 1;
+      }
 
-          .file-name {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-top: 0.5rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 0 0.5rem;
-          }
+      input,
+      select {
+        width: 100%;
+        padding: 1.2rem;
+        background: rgba(51, 65, 85, 0.7);
+        border: 1px solid rgba(71, 85, 105, 0.4);
+        color: var(--light);
+        border-radius: 10px;
+        transition: all 0.3s;
+        font-size: 16px;
+      }
 
-          @keyframes btnGlow {
-            0% {
-              left: -50%;
-            }
-            100% {
-              left: 150%;
-            }
-          }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.2);
+      }
 
-          .satellite-overlay {
-            position: absolute;
-            width: 400px;
-            right: -100px;
-            bottom: -100px;
-            opacity: 0.08;
-            pointer-events: none;
-            animation: float 8s ease-in-out infinite;
-          }
+      .predict-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        width: 100%;
+        padding: 1.4rem;
+        background: linear-gradient(135deg,
+            var(--primary) 0%,
+            var(--secondary) 100%);
+        color: var(--dark);
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        margin-top: 1rem;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+      }
 
-          @keyframes float {
-            0%,
-            100% {
-              transform: translateY(0) rotate(-5deg);
-            }
-            50% {
-              transform: translateY(-20px) rotate(5deg);
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <header class="header">
-            <h1>天穹卫星钟差预测系统</h1>
-            <p>高精度GNSS卫星钟差分析与预测平台</p>
-          </header>
+      .predict-btn::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent);
+        transform: rotate(45deg);
+        transition: all 0.5s;
+      }
 
-          <main class="main-content">
-            <!-- 控制面板 -->
-            <div class="control-card">
-              <!-- 卫星编号输入 -->
-              <div class="input-group">
-                <label>卫星编号输入</label>
-                <input
-                  type="text"
-                  placeholder="请输入PRN/SVN编号"
-                  id="satellite-id"
-                />
-              </div>
+      .predict-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(125, 211, 252, 0.3);
+      }
 
-              <!-- 预测参数设置 -->
-              <div class="input-group">
-                <label>预测参数设置</label>
-                <div style="display: grid; gap: 1.2rem">
-                  <select id="time-range">
-                    <option value="6h">短期预测 (6小时)</option>
-                    <option value="12h">中期预测 (12小时)</option>
-                    <option value="24h">长期预测 (24小时)</option>
-                  </select>
-                  <input type="datetime-local" id="prediction-time" />
-                </div>
-              </div>
+      .predict-btn:hover::before {
+        animation: btnGlow 1.5s;
+      }
 
-              <!-- 文件上传模块 -->
-              <div class="input-group">
-                <label>数据文件上传</label>
-                <div class="file-upload-wrapper">
-                  <div class="predict-btn">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    选择观测数据文件
-                    <input
-                      type="file"
-                      class="file-upload-input"
-                      accept=".sp3,.txt,.dat"
-                      id="fileInput"
-                    />
-                  </div>
-                  <div class="file-name" id="fileName">未选择文件</div>
-                </div>
-              </div>
+      .visualization-panel {
+        background: rgba(30, 41, 59, 0.85);
+        border-radius: 16px;
+        padding: 2rem;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(125, 211, 252, 0.15);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
 
-              
+      .chart-container {
+        height: 500px;
+        margin-bottom: 2rem;
+      }
 
-              <!-- 预测按钮 -->
-              <a class="predict-btn" id="predictButton">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M12 2v20M2 12h20" />
-                </svg>
-                开始钟差预测
-              </a>
+      .file-upload-wrapper {
+        position: relative;
+        margin-bottom: 1.5rem;
+      }
 
-              <!-- 新增SP3文件信息展示 -->
-              <div id="sp3Info" style="display: none">
-                <div class="info-card">
-                  <div class="info-item">
-                    <span class="info-label">坐标系</span>
-                    <span class="info-value" id="info-coord">-</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">时间范围</span>
-                    <span class="info-value" id="info-time">-</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">卫星数量</span>
-                    <span class="info-value" id="info-count">-</span>
-                  </div>
-                  <div
-                    class="info-item"
-                    style="flex-direction: column; align-items: flex-start"
-                  >
-                    <span class="info-label">卫星列表</span>
-                    <div class="satellite-list" id="satellite-list"></div>
-                  </div>
-                </div>
-              </div>
+      .file-upload-input {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      .file-name {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        margin-top: 0.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 0.5rem;
+      }
+
+      @keyframes btnGlow {
+        0% {
+          left: -50%;
+        }
+
+        100% {
+          left: 150%;
+        }
+      }
+
+      .satellite-overlay {
+        position: absolute;
+        width: 400px;
+        right: -100px;
+        bottom: -100px;
+        opacity: 0.08;
+        pointer-events: none;
+        animation: float 8s ease-in-out infinite;
+      }
+
+      @keyframes float {
+
+        0%,
+        100% {
+          transform: translateY(0) rotate(-5deg);
+        }
+
+        50% {
+          transform: translateY(-20px) rotate(5deg);
+        }
+      }
+    </style>
+  </head>
+
+<body>
+  <!-- 新增悬浮提示元素 -->
+  <div class="upload-toast" id="uploadToast">
+    文件已上传，请下滑查看信息
+  </div>
+
+  <!-- 新增的悬浮按钮代码 -->
+  <div class="help-fab" onclick="window.open('https://ll-aif.github.io/kp.github.io/')">
+    <div class="fab-tooltip">关于卫星钟差</div>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12" y2="17" />
+    </svg>
+  </div>
+
+  <div class="container">
+    <header class="header">
+      <h1>天穹卫星钟差预测系统</h1>
+      <p>高精度GNSS卫星钟差分析与预测平台</p>
+    </header>
+
+    <main class="main-content">
+      <!-- 控制面板 -->
+      <div class="control-card">
+        <!-- 文件上传模块 -->
+        <div class="input-group">
+          <label>数据文件上传</label>
+          <div class="file-upload-wrapper">
+            <div class="predict-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              选择观测数据文件
+              <input type="file" class="file-upload-input" accept=".sp3,.txt,.dat" id="fileInput" />
             </div>
-
-            <!-- 可视化面板 -->
-            <div class="visualization-panel">
-              <div class="chart-container">
-                <canvas id="predictionChart"></canvas>
-                <img
-                  src="https://www.freeiconspng.com/uploads/satellite-icon-8.png"
-                  class="satellite-overlay"
-                  alt="satellite overlay"
-                />
-              </div>
-            </div>
-          </main>
+            <div class="file-name" id="fileName">未选择文件</div>
+          </div>
         </div>
 
-        <!-- 图表库 -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- 卫星编号输入 -->
+        <div class="input-group">
+          <label>卫星编号输入</label>
+          <input type="text" placeholder="请输入PRN/SVN编号" id="satellite-id" />
+        </div>
 
-        <script>
-          // 文件上传处理
-          document
-            .getElementById("fileInput")
-            .addEventListener("change", function (e) {
-              const file = e.target.files[0];
-              const fileNameDisplay = document.getElementById("fileName");
-              fileNameDisplay.textContent = file ? file.name : "未选择文件";
+        <!-- 预测参数设置 -->
+        <div class="input-group">
+          <label>预测参数设置</label>
+          <div style="display: grid; gap: 1.2rem">
+            <select id="time-range">
+              <option value="6h">短期预测 (6小时)</option>
+              <option value="12h">中期预测 (12小时)</option>
+              <option value="24h">长期预测 (24小时)</option>
+            </select>
+            <input type="datetime-local" id="prediction-time" />
+          </div>
+        </div>
 
-              if (file) {
-                parseSP3File(file);
-              }
-            });
+        <!-- 预测按钮 -->
+        <a class="predict-btn" id="predictButton">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20" />
+          </svg>
+          开始钟差预测
+        </a>
 
-          // SP3文件解析函数
-          function parseSP3File(file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-              const content = e.target.result;
-              const info = {
-                coordSystem: "未知",
-                startTime: "未知",
-                satellites: [],
-              };
+        <!-- 新增SP3文件信息展示 -->
+        <div id="sp3Info" style="display: none">
+          <div class="info-card">
+            <div class="info-item">
+              <span class="info-label">坐标系</span>
+              <span class="info-value" id="info-coord">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">时间范围</span>
+              <span class="info-value" id="info-time">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">卫星数量</span>
+              <span class="info-value" id="info-count">-</span>
+            </div>
+            <div class="info-item" style="flex-direction: column; align-items: flex-start">
+              <span class="info-label">卫星列表</span>
+              <div class="satellite-list" id="satellite-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              content.split("\n").forEach((line) => {
-                // 解析坐标系和起始时间（处理#cP开头的行）
-                if (
-                  line.startsWith("#cP") ||
-                  line.startsWith("#cV") ||
-                  line.startsWith("#dV")
-                ) {
-                  // 坐标系解析（行尾最后一个有效字段）
-                  const fields = line.trim().split(/\s+/);
-                  info.coordSystem = fields[fields.length - 3] || "未知"; // 倒数第三个字段
+      <!-- 可视化面板 -->
+      <div class="visualization-panel">
+        <div class="chart-container">
+          <canvas id="predictionChart"></canvas>
+          <img src="https://www.freeiconspng.com/uploads/satellite-icon-8.png" class="satellite-overlay"
+            alt="satellite overlay" />
+        </div>
+      </div>
+    </main>
+  </div>
 
-                  // 时间解析（修正后的字符位置）
-                  const year = parseInt(line.slice(3, 7));
-                  const month = parseInt(line.slice(8, 10));
-                  const day = parseInt(line.slice(11, 13));
-                  const hour = parseInt(line.slice(14, 16));
-                  const minute = parseInt(line.slice(17, 19));
-                  info.startTime = `${year}-${month
-                    .toString()
-                    .padStart(2, "0")}-${day
-                    .toString()
-                    .padStart(2, "0")} ${hour}:${minute}`;
-                }
+  <!-- 图表库 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-                // 解析卫星列表（处理紧凑格式）
-                else if (line.startsWith("+ ")) {
-                  const satPart = line.slice(9).trim(); // 跳过前面的+和卫星数量
-                  for (let i = 0; i < satPart.length; i += 3) {
-                    const sat = satPart.slice(i, i + 3);
-                    if (/^[A-Z]\d{2}$/.test(sat)) info.satellites.push(sat);
-                  }
-                }
-              });
+  <script>
+    // 文件上传处理
+    document
+      .getElementById("fileInput")
+      .addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        const fileNameDisplay = document.getElementById("fileName");
+        fileNameDisplay.textContent = file ? file.name : "未选择文件";
 
-              // 去重和排序
-              info.satellites = [...new Set(info.satellites)].sort((a, b) =>
-                a.localeCompare(b, undefined, { numeric: true })
-              );
+        if (file) {
+          parseSP3File(file);
 
-              // 更新界面显示
-              document.getElementById("sp3Info").style.display = "block";
-              document.getElementById("info-coord").textContent =
-                info.coordSystem;
-              document.getElementById("info-time").textContent = info.startTime;
-              document.getElementById("info-count").textContent =
-                info.satellites.length;
+          // 显示悬浮提示
+          const toast = document.getElementById("uploadToast");
+          toast.classList.add("active");
+          setTimeout(() => {
+            toast.classList.remove("active");
+          }, 3000);
+        }
+      });
 
-              const listContainer = document.getElementById("satellite-list");
-              listContainer.innerHTML = info.satellites
-                .map((s) => `<div class="satellite-item">${s}</div>`)
-                .join("");
-            };
-            reader.readAsText(file);
+    // SP3文件解析函数
+    function parseSP3File(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const content = e.target.result;
+        const info = {
+          coordSystem: "未知",
+          startTime: "未知",
+          satellites: [],
+        };
+
+        content.split("\n").forEach((line) => {
+          // 解析坐标系和起始时间（处理#cP开头的行）
+          if (
+            line.startsWith("#cP") ||
+            line.startsWith("#cV") ||
+            line.startsWith("#dV")
+          ) {
+            // 坐标系解析（行尾最后一个有效字段）
+            const fields = line.trim().split(/\s+/);
+            info.coordSystem = fields[fields.length - 3] || "未知"; // 倒数第三个字段
+
+            // 时间解析（修正后的字符位置）
+            const year = parseInt(line.slice(3, 7));
+            const month = parseInt(line.slice(8, 10));
+            const day = parseInt(line.slice(11, 13));
+            const hour = parseInt(line.slice(14, 16));
+            const minute = parseInt(line.slice(17, 19));
+            info.startTime = `${year}-${month
+              .toString()
+              .padStart(2, "0")}-${day
+                .toString()
+                .padStart(2, "0")} ${hour}:${minute}`;
           }
 
-          // 图表初始化
-          const ctx = document
-            .getElementById("predictionChart")
-            .getContext("2d");
-          new Chart(ctx, {
-            type: "line",
-            data: {
-              labels: [],
-              datasets: [
-                {
-                  label: "钟差值 (ns)",
-                  borderColor: "rgba(125, 211, 252, 1)",
-                  borderWidth: 3,
-                  tension: 0.3,
-                  pointRadius: 0,
-                  data: [],
-                  fill: true,
-                  backgroundColor: "rgba(125, 211, 252, 0.08)",
-                },
-              ],
+          // 解析卫星列表（处理紧凑格式）
+          else if (line.startsWith("+ ")) {
+            const satPart = line.slice(9).trim(); // 跳过前面的+和卫星数量
+            for (let i = 0; i < satPart.length; i += 3) {
+              const sat = satPart.slice(i, i + 3);
+              if (/^[A-Z]\d{2}$/.test(sat)) info.satellites.push(sat);
+            }
+          }
+        });
+
+        // 去重和排序
+        info.satellites = [...new Set(info.satellites)].sort((a, b) =>
+          a.localeCompare(b, undefined, { numeric: true })
+        );
+
+        // 更新界面显示
+        document.getElementById("sp3Info").style.display = "block";
+        document.getElementById("info-coord").textContent =
+          info.coordSystem;
+        document.getElementById("info-time").textContent = info.startTime;
+        document.getElementById("info-count").textContent =
+          info.satellites.length;
+
+        const listContainer = document.getElementById("satellite-list");
+        listContainer.innerHTML = info.satellites
+          .map((s) => `<div class="satellite-item">${s}</div>`)
+          .join("");
+      };
+      reader.readAsText(file);
+    }
+
+    // 图表初始化
+    const ctx = document
+      .getElementById("predictionChart")
+      .getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "钟差值 (ns)",
+            borderColor: "rgba(125, 211, 252, 1)",
+            borderWidth: 3,
+            tension: 0.3,
+            pointRadius: 0,
+            data: [],
+            fill: true,
+            backgroundColor: "rgba(125, 211, 252, 0.08)",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            grid: {
+              color: "rgba(71, 85, 105, 0.2)",
+              borderDash: [5, 5],
             },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                y: {
-                  grid: {
-                    color: "rgba(71, 85, 105, 0.2)",
-                    borderDash: [5, 5],
-                  },
-                  ticks: {
-                    color: "#94a3b8",
-                    callback: function (value) {
-                      return value + " ns";
-                    },
-                  },
-                },
-                x: {
-                  grid: {
-                    color: "rgba(71, 85, 105, 0.2)",
-                    borderDash: [5, 5],
-                  },
-                  ticks: {
-                    color: "#94a3b8",
-                    maxRotation: 0,
-                  },
-                },
-              },
-              plugins: {
-                legend: {
-                  labels: {
-                    color: "#94a3b8",
-                    font: { size: 14 },
-                  },
-                },
+            ticks: {
+              color: "#94a3b8",
+              callback: function (value) {
+                return value + " ns";
               },
             },
-          });
+          },
+          x: {
+            grid: {
+              color: "rgba(71, 85, 105, 0.2)",
+              borderDash: [5, 5],
+            },
+            ticks: {
+              color: "#94a3b8",
+              maxRotation: 0,
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: "#94a3b8",
+              font: { size: 14 },
+            },
+          },
+        },
+      },
+    });
 
-          // 预测按钮点击事件
-          document
-            .getElementById("predictButton")
-            .addEventListener("click", function () {
-              const file = document.getElementById("fileInput").files[0];
-              const satelliteId = document.getElementById("satellite-id").value;
+    // 预测按钮点击事件
+    document
+      .getElementById("predictButton")
+      .addEventListener("click", function () {
+        const file = document.getElementById("fileInput").files[0];
+        const satelliteId = document.getElementById("satellite-id").value;
 
-              if (!file) {
-                alert("请先选择数据文件");
-                return;
-              }
+        if (!file) {
+          alert("请先选择数据文件");
+          return;
+        }
 
-              if (!satelliteId) {
-                alert("请输入卫星编号");
-                return;
-              }
+        if (!satelliteId) {
+          alert("请输入卫星编号");
+          return;
+        }
 
-              console.log("开始预测:", {
-                file: file.name,
-                satelliteId: satelliteId,
-                timeRange: document.getElementById("time-range").value,
-              });
-            });
-        </script>
-      </body>
-    </html>
-  </head>
+        console.log("开始预测:", {
+          file: file.name,
+          satelliteId: satelliteId,
+          timeRange: document.getElementById("time-range").value,
+        });
+      });
+  </script>
+</body>
+
+</html>
+</head>
+
 </html>
